@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
 import { GENERA, type CycadItem, type Genus, type Sex, type PermitStatus } from "@/lib/types";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, FileUp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -43,6 +43,8 @@ const AddCycadForm = ({ collectorId, onAdd }: AddCycadFormProps) => {
   const [purchasePrice, setPurchasePrice] = useState("");
   const [value, setValue] = useState("");
   const [permit, setPermit] = useState<PermitStatus>("Not required");
+  const [permitFile, setPermitFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -84,6 +86,7 @@ const AddCycadForm = ({ collectorId, onAdd }: AddCycadFormProps) => {
       purchasePrice: result.data.purchasePrice,
       value: result.data.value,
       permit: result.data.permit,
+      permitFile: permitFile ? { name: permitFile.name, url: URL.createObjectURL(permitFile) } : undefined,
       dateAdded: new Date().toISOString(),
     };
 
@@ -98,6 +101,8 @@ const AddCycadForm = ({ collectorId, onAdd }: AddCycadFormProps) => {
     setPurchasePrice("");
     setValue("");
     setPermit("Not required");
+    setPermitFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const formFields = (
@@ -208,6 +213,54 @@ const AddCycadForm = ({ collectorId, onAdd }: AddCycadFormProps) => {
             <SelectItem value="In process">In process</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Permit PDF Upload */}
+      <div className="space-y-2">
+        <Label>Upload Permit (PDF)</Label>
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <FileUp className="h-4 w-4" />
+            {permitFile ? "Change File" : "Choose PDF"}
+          </Button>
+          {permitFile && (
+            <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-1.5 text-sm">
+              <span className="max-w-[200px] truncate">{permitFile.name}</span>
+              <button
+                type="button"
+                onClick={() => { setPermitFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              if (file.type !== "application/pdf") {
+                toast({ title: "Invalid file", description: "Please upload a PDF file.", variant: "destructive" });
+                return;
+              }
+              if (file.size > 10 * 1024 * 1024) {
+                toast({ title: "File too large", description: "Maximum file size is 10MB.", variant: "destructive" });
+                return;
+              }
+              setPermitFile(file);
+            }
+          }}
+        />
       </div>
 
       <button

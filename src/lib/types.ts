@@ -38,5 +38,6 @@ export interface CycadItem {
   purchasePrice?: string;
   value?: string;
   permit: PermitStatus;
+  permitFile?: { name: string; url: string };
   dateAdded: string;
 }

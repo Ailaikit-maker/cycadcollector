@@ -1,4 +1,4 @@
-import { Leaf } from "lucide-react";
+import { Leaf, FileText } from "lucide-react";
 import type { CycadItem } from "@/lib/types";
 
 const permitColor: Record<string, string> = {
@@ -35,6 +35,18 @@ const CycadCard = ({ item, onDelete }: { item: CycadItem; onDelete: (id: string)
         )}
         <span>Added: {new Date(item.dateAdded).toLocaleDateString()}</span>
       </div>
+
+      {item.permitFile && (
+        <a
+          href={item.permitFile.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-2 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+        >
+          <FileText className="h-3.5 w-3.5" />
+          {item.permitFile.name}
+        </a>
+      )}
 
       <button
         onClick={() => onDelete(item.id)}
