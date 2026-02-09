@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
-import { Leaf, User, Plus, TreePine } from "lucide-react";
+import { Leaf, User, Plus, TreePine, BarChart3 } from "lucide-react";
 import HeroSection from "@/components/HeroSection";
 import CollectorForm from "@/components/CollectorForm";
 import AddCycadForm from "@/components/AddCycadForm";
+import CollectionSummary from "@/components/CollectionSummary";
 import CycadCard from "@/components/CycadCard";
 import type { Collector, CycadItem } from "@/lib/types";
 
@@ -63,45 +64,56 @@ const Index = () => {
 
         {/* Collection */}
         {collector && (
-          <section>
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Leaf className="h-6 w-6 text-primary" />
-                <h2 className="text-3xl font-bold text-foreground">Your Collection</h2>
-                <span className="rounded-full bg-primary/10 px-3 py-0.5 text-sm font-medium text-primary">
-                  {items.length}
-                </span>
+          <>
+            <section>
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Leaf className="h-6 w-6 text-primary" />
+                  <h2 className="text-3xl font-bold text-foreground">Your Collection</h2>
+                  <span className="rounded-full bg-primary/10 px-3 py-0.5 text-sm font-medium text-primary">
+                    {items.length}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:scale-105"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Cycad
+                </button>
               </div>
-              <button
-                onClick={() => setShowAddForm(!showAddForm)}
-                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:scale-105"
-              >
-                <Plus className="h-4 w-4" />
-                Add Cycad
-              </button>
-            </div>
 
-            {showAddForm && (
-              <div className="mb-8 rounded-2xl border bg-card p-6 shadow-sm md:p-8">
-                <h3 className="mb-4 font-display text-xl font-semibold text-card-foreground">Add New Cycad</h3>
-                <AddCycadForm collectorId={collector.id} onAdd={handleAddItem} />
-              </div>
-            )}
+              {showAddForm && (
+                <div className="mb-8 rounded-2xl border bg-card p-6 shadow-sm md:p-8">
+                  <h3 className="mb-4 font-display text-xl font-semibold text-card-foreground">Add New Cycad</h3>
+                  <AddCycadForm collectorId={collector.id} onAdd={handleAddItem} />
+                </div>
+              )}
 
-            {items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed bg-card/50 py-16">
-                <Leaf className="mb-4 h-12 w-12 text-muted-foreground/40" />
-                <p className="text-lg text-muted-foreground">No cycads in your collection yet.</p>
-                <p className="text-sm text-muted-foreground/70">Click "Add Cycad" to start cataloguing.</p>
+              {items.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed bg-card/50 py-16">
+                  <Leaf className="mb-4 h-12 w-12 text-muted-foreground/40" />
+                  <p className="text-lg text-muted-foreground">No cycads in your collection yet.</p>
+                  <p className="text-sm text-muted-foreground/70">Click "Add Cycad" to start cataloguing.</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {items.map((item) => (
+                    <CycadCard key={item.id} item={item} onDelete={handleDeleteItem} />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Summary */}
+            <section className="mt-16">
+              <div className="mb-6 flex items-center gap-3">
+                <BarChart3 className="h-6 w-6 text-primary" />
+                <h2 className="text-3xl font-bold text-foreground">Collection Summary</h2>
               </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {items.map((item) => (
-                  <CycadCard key={item.id} item={item} onDelete={handleDeleteItem} />
-                ))}
-              </div>
-            )}
-          </section>
+              <CollectionSummary items={items} />
+            </section>
+          </>
         )}
       </main>
 
