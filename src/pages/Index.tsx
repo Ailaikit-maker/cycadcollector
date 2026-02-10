@@ -26,6 +26,10 @@ const Index = () => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
+  const handleEditItem = (updated: CycadItem) => {
+    setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+  };
+
   return (
     <div className="min-h-screen">
       {/* Navbar */}
@@ -99,7 +103,7 @@ const Index = () => {
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
                   {items.map((item) => (
-                    <CycadCard key={item.id} item={item} onDelete={handleDeleteItem} />
+                    <CycadCard key={item.id} item={item} onDelete={handleDeleteItem} onEdit={handleEditItem} />
                   ))}
                 </div>
               )}
