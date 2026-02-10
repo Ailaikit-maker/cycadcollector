@@ -14,7 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      collectors: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cycad_items: {
+        Row: {
+          date_added: string
+          date_obtained: string | null
+          diameter: string | null
+          genus: string
+          height: string | null
+          id: string
+          obtained_at: string | null
+          permit: string
+          permit_file_name: string | null
+          permit_file_url: string | null
+          purchase_price: string | null
+          sex: string
+          species: string
+          updated_at: string
+          user_id: string
+          value: string | null
+        }
+        Insert: {
+          date_added?: string
+          date_obtained?: string | null
+          diameter?: string | null
+          genus: string
+          height?: string | null
+          id?: string
+          obtained_at?: string | null
+          permit?: string
+          permit_file_name?: string | null
+          permit_file_url?: string | null
+          purchase_price?: string | null
+          sex?: string
+          species: string
+          updated_at?: string
+          user_id: string
+          value?: string | null
+        }
+        Update: {
+          date_added?: string
+          date_obtained?: string | null
+          diameter?: string | null
+          genus?: string
+          height?: string | null
+          id?: string
+          obtained_at?: string | null
+          permit?: string
+          permit_file_name?: string | null
+          permit_file_url?: string | null
+          purchase_price?: string | null
+          sex?: string
+          species?: string
+          updated_at?: string
+          user_id?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

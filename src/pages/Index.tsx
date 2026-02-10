@@ -1,13 +1,17 @@
-import { useState, useRef } from "react";
-import { Leaf, User, Plus, TreePine, BarChart3 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Leaf, User, Plus, TreePine, BarChart3, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import HeroSection from "@/components/HeroSection";
 import CollectorForm from "@/components/CollectorForm";
 import AddCycadForm from "@/components/AddCycadForm";
 import CollectionSummary from "@/components/CollectionSummary";
 import CycadCard from "@/components/CycadCard";
-import type { Collector, CycadItem } from "@/lib/types";
+import { toast } from "@/hooks/use-toast";
+import type { Collector, CycadItem, Genus, Sex, PermitStatus } from "@/lib/types";
 
 const Index = () => {
+  const { user, signOut } = useAuth();
   const [collector, setCollector] = useState<Collector | null>(null);
   const [items, setItems] = useState<CycadItem[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -17,16 +21,129 @@ const Index = () => {
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleAddItem = (item: CycadItem) => {
-    setItems((prev) => [item, ...prev]);
+  // Load collector profile and cycads from database
+  useEffect(() => {
+    if (!user) return;
+    const loadData = async () => {
+      const { data: profile } = await supabase
+        .from("collectors")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (profile) {
+        setCollector({
+          id: profile.id,
+          firstName: profile.first_name,
+          lastName: profile.last_name,
+          email: profile.email,
+          address: profile.address ?? undefined,
+        });
+      }
+      const { data: cycads } = await supabase
+        .from("cycad_items")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("date_added", { ascending: false });
+      if (cycads) {
+        setItems(
+          cycads.map((c) => ({
+            id: c.id,
+            collectorId: c.user_id,
+            genus: c.genus as Genus,
+            species: c.species,
+            dateObtained: c.date_obtained ?? undefined,
+            obtainedAt: c.obtained_at ?? undefined,
+            height: c.height ?? undefined,
+            diameter: c.diameter ?? undefined,
+            sex: c.sex as Sex,
+            purchasePrice: c.purchase_price ?? undefined,
+            value: c.value ?? undefined,
+            permit: c.permit as PermitStatus,
+            permitFile: c.permit_file_name && c.permit_file_url
+              ? { name: c.permit_file_name, url: c.permit_file_url }
+              : undefined,
+            dateAdded: c.date_added,
+          }))
+        );
+      }
+    };
+    loadData();
+  }, [user]);
+
+  const handleCollectorSubmit = async (c: Collector) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from("collectors")
+      .upsert({
+        id: collector?.id ?? undefined,
+        user_id: user.id,
+        first_name: c.firstName,
+        last_name: c.lastName,
+        email: c.email,
+        address: c.address ?? null,
+      }, { onConflict: "user_id" });
+    if (error) {
+      toast({ title: "Error saving profile", description: error.message, variant: "destructive" });
+      return;
+    }
+    setCollector(c);
+  };
+
+  const handleAddItem = async (item: CycadItem) => {
+    if (!user) return;
+    const { data, error } = await supabase.from("cycad_items").insert({
+      user_id: user.id,
+      genus: item.genus,
+      species: item.species,
+      date_obtained: item.dateObtained ?? null,
+      obtained_at: item.obtainedAt ?? null,
+      height: item.height ?? null,
+      diameter: item.diameter ?? null,
+      sex: item.sex,
+      purchase_price: item.purchasePrice ?? null,
+      value: item.value ?? null,
+      permit: item.permit,
+      permit_file_name: item.permitFile?.name ?? null,
+      permit_file_url: item.permitFile?.url ?? null,
+    }).select().single();
+    if (error) {
+      toast({ title: "Error adding cycad", description: error.message, variant: "destructive" });
+      return;
+    }
+    setItems((prev) => [{
+      ...item,
+      id: data.id,
+      dateAdded: data.date_added,
+    }, ...prev]);
     setShowAddForm(false);
   };
 
-  const handleDeleteItem = (id: string) => {
+  const handleDeleteItem = async (id: string) => {
+    const { error } = await supabase.from("cycad_items").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error removing cycad", description: error.message, variant: "destructive" });
+      return;
+    }
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
-  const handleEditItem = (updated: CycadItem) => {
+  const handleEditItem = async (updated: CycadItem) => {
+    const { error } = await supabase.from("cycad_items").update({
+      genus: updated.genus,
+      species: updated.species,
+      date_obtained: updated.dateObtained ?? null,
+      obtained_at: updated.obtainedAt ?? null,
+      height: updated.height ?? null,
+      diameter: updated.diameter ?? null,
+      sex: updated.sex,
+      purchase_price: updated.purchasePrice ?? null,
+      value: updated.value ?? null,
+      permit: updated.permit,
+    }).eq("id", updated.id);
+    if (error) {
+      toast({ title: "Error updating cycad", description: error.message, variant: "destructive" });
+      return;
+    }
     setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
   };
 
@@ -39,12 +156,21 @@ const Index = () => {
             <TreePine className="h-6 w-6 text-primary" />
             <span className="font-display text-xl font-bold text-foreground">Cycad Collector</span>
           </div>
-          {collector && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <User className="h-4 w-4" />
-              <span>{collector.firstName} {collector.lastName}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            {collector && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="h-4 w-4" />
+                <span>{collector.firstName} {collector.lastName}</span>
+              </div>
+            )}
+            <button
+              onClick={signOut}
+              className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+            >
+              <LogOut className="h-4 w-4" />
+              Log out
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -62,7 +188,7 @@ const Index = () => {
             </h2>
           </div>
           <div className="rounded-2xl border bg-card p-6 shadow-sm md:p-8">
-            <CollectorForm onSubmit={setCollector} existingCollector={collector} />
+            <CollectorForm onSubmit={handleCollectorSubmit} existingCollector={collector} />
           </div>
         </div>
 
