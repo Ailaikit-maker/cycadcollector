@@ -183,23 +183,23 @@ const Index = () => {
         </div>
       </nav>
 
-      {/* Hero */}
-      <HeroSection onGetStarted={scrollToForm} />
+      {/* Hero - only show if no profile yet */}
+      {!collector && <HeroSection onGetStarted={scrollToForm} />}
 
       {/* Main Content */}
       <main className="mx-auto max-w-4xl px-6 py-16">
-        {/* Registration */}
-        <div ref={formRef} className="mb-16 scroll-mt-24">
-          <div className="mb-6 flex items-center gap-3">
-            <User className="h-6 w-6 text-primary" />
-            <h2 className="text-3xl font-bold text-foreground">
-              {collector ? "Your Profile" : "Register as a Collector"}
-            </h2>
+        {/* Registration - only show if no profile yet */}
+        {!collector && (
+          <div ref={formRef} className="mb-16 scroll-mt-24">
+            <div className="mb-6 flex items-center gap-3">
+              <User className="h-6 w-6 text-primary" />
+              <h2 className="text-3xl font-bold text-foreground">Register as a Collector</h2>
+            </div>
+            <div className="rounded-2xl border bg-card p-6 shadow-sm md:p-8">
+              <CollectorForm onSubmit={handleCollectorSubmit} existingCollector={collector} />
+            </div>
           </div>
-          <div className="rounded-2xl border bg-card p-6 shadow-sm md:p-8">
-            <CollectorForm onSubmit={handleCollectorSubmit} existingCollector={collector} />
-          </div>
-        </div>
+        )}
 
         {/* Collection */}
         {collector && (
