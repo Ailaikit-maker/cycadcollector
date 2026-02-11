@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Leaf, User, Plus, TreePine, BarChart3, LogOut } from "lucide-react";
+import { Leaf, User, Plus, BarChart3, LogOut } from "lucide-react";
+import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import HeroSection from "@/components/HeroSection";
@@ -153,14 +154,22 @@ const Index = () => {
       <nav className="fixed top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-2">
-            <TreePine className="h-6 w-6 text-primary" />
+            <img src={logo} alt="Cycad Collector logo" className="h-8 w-8 rounded-full object-cover" />
             <span className="font-display text-xl font-bold text-foreground">Cycad Collector</span>
           </div>
           <div className="flex items-center gap-4">
             {collector && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <User className="h-4 w-4" />
-                <span>{collector.firstName} {collector.lastName}</span>
+              <div className="hidden items-center gap-3 rounded-lg bg-muted/50 px-4 py-1.5 text-sm sm:flex">
+                <User className="h-4 w-4 text-primary" />
+                <span className="font-medium text-foreground">{collector.firstName} {collector.lastName}</span>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-muted-foreground">{collector.email}</span>
+                {collector.address && (
+                  <>
+                    <span className="text-muted-foreground">|</span>
+                    <span className="text-muted-foreground">{collector.address}</span>
+                  </>
+                )}
               </div>
             )}
             <button
