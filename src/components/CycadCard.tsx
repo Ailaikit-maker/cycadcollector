@@ -65,7 +65,7 @@ const CycadCard = ({
           </a>
         )}
 
-        <div className="mt-1 flex gap-3 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="mt-1 flex gap-3">
           <button
             onClick={() => setEditOpen(true)}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"

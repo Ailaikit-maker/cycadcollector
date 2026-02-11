@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, FileUp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { toast } from "@/hooks/use-toast";
 import { GENERA, type CycadItem, type Genus, type Sex, type PermitStatus } from "@/lib/types";
 
 interface EditCycadDialogProps {
@@ -32,6 +33,9 @@ const EditCycadDialog = ({ item, open, onOpenChange, onSave }: EditCycadDialogPr
   const [purchasePrice, setPurchasePrice] = useState(item.purchasePrice || "");
   const [value, setValue] = useState(item.value || "");
   const [permit, setPermit] = useState<PermitStatus>(item.permit);
+  const [permitFile, setPermitFile] = useState<{ name: string; url: string } | undefined>(item.permitFile);
+  const [newPermitFile, setNewPermitFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     if (!species.trim()) return;
@@ -47,6 +51,9 @@ const EditCycadDialog = ({ item, open, onOpenChange, onSave }: EditCycadDialogPr
       purchasePrice: purchasePrice || undefined,
       value: value || undefined,
       permit,
+      permitFile: newPermitFile
+        ? { name: newPermitFile.name, url: URL.createObjectURL(newPermitFile) }
+        : permitFile,
     });
     onOpenChange(false);
   };
@@ -149,6 +156,39 @@ const EditCycadDialog = ({ item, open, onOpenChange, onSave }: EditCycadDialogPr
                 <SelectItem value="In process">In process</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Permit File */}
+          <div className="space-y-2">
+            <Label>Permit File (PDF)</Label>
+            <div className="flex items-center gap-3">
+              <Button type="button" variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
+                <FileUp className="h-4 w-4" />
+                {permitFile || newPermitFile ? "Change File" : "Upload PDF"}
+              </Button>
+              {(newPermitFile || permitFile) && (
+                <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-1.5 text-sm">
+                  <span className="max-w-[200px] truncate">{newPermitFile?.name || permitFile?.name}</span>
+                  <button type="button" onClick={() => { setNewPermitFile(null); setPermitFile(undefined); if (fileInputRef.current) fileInputRef.current.value = ""; }} className="text-muted-foreground hover:text-destructive">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+            <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                if (file.type !== "application/pdf") {
+                  toast({ title: "Invalid file", description: "Please upload a PDF file.", variant: "destructive" });
+                  return;
+                }
+                if (file.size > 10 * 1024 * 1024) {
+                  toast({ title: "File too large", description: "Maximum file size is 10MB.", variant: "destructive" });
+                  return;
+                }
+                setNewPermitFile(file);
+              }
+            }} />
           </div>
         </div>
 
