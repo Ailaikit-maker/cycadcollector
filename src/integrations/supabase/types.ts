@@ -55,6 +55,7 @@ export type Database = {
           genus: string
           height: string | null
           id: string
+          image_url: string | null
           obtained_at: string | null
           permit: string
           permit_file_name: string | null
@@ -73,6 +74,7 @@ export type Database = {
           genus: string
           height?: string | null
           id?: string
+          image_url?: string | null
           obtained_at?: string | null
           permit?: string
           permit_file_name?: string | null
@@ -91,6 +93,7 @@ export type Database = {
           genus?: string
           height?: string | null
           id?: string
+          image_url?: string | null
           obtained_at?: string | null
           permit?: string
           permit_file_name?: string | null

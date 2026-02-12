@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, FileUp, X } from "lucide-react";
+import { CalendarIcon, FileUp, X, ImagePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
@@ -17,7 +17,7 @@ interface EditCycadDialogProps {
   item: CycadItem;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (updated: CycadItem) => void;
+  onSave: (updated: CycadItem, imageFile?: File) => void;
 }
 
 const EditCycadDialog = ({ item, open, onOpenChange, onSave }: EditCycadDialogProps) => {
@@ -35,11 +35,15 @@ const EditCycadDialog = ({ item, open, onOpenChange, onSave }: EditCycadDialogPr
   const [permit, setPermit] = useState<PermitStatus>(item.permit);
   const [permitFile, setPermitFile] = useState<{ name: string; url: string } | undefined>(item.permitFile);
   const [newPermitFile, setNewPermitFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(item.imageUrl || null);
+  const [removeImage, setRemoveImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     if (!species.trim()) return;
-    onSave({
+    const updated: CycadItem = {
       ...item,
       genus,
       species: species.trim(),
@@ -54,7 +58,9 @@ const EditCycadDialog = ({ item, open, onOpenChange, onSave }: EditCycadDialogPr
       permitFile: newPermitFile
         ? { name: newPermitFile.name, url: URL.createObjectURL(newPermitFile) }
         : permitFile,
-    });
+      imageUrl: removeImage ? undefined : (imageFile ? undefined : item.imageUrl),
+    };
+    onSave(updated, imageFile || undefined);
     onOpenChange(false);
   };
 
@@ -156,6 +162,51 @@ const EditCycadDialog = ({ item, open, onOpenChange, onSave }: EditCycadDialogPr
                 <SelectItem value="In process">In process</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Cycad Image */}
+          <div className="space-y-2">
+            <Label>Cycad Image</Label>
+            <div className="flex items-center gap-3">
+              <Button type="button" variant="outline" className="gap-2" onClick={() => imageInputRef.current?.click()}>
+                <ImagePlus className="h-4 w-4" />
+                {imagePreview ? "Change Image" : "Upload Image"}
+              </Button>
+              {imagePreview && (
+                <button
+                  type="button"
+                  onClick={() => { setImageFile(null); setImagePreview(null); setRemoveImage(true); if (imageInputRef.current) imageInputRef.current.value = ""; }}
+                  className="text-sm text-destructive hover:underline"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            {imagePreview && (
+              <img src={imagePreview} alt="Preview" className="mt-2 h-32 w-32 rounded-lg object-cover border" />
+            )}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  if (!file.type.startsWith("image/")) {
+                    toast({ title: "Invalid file", description: "Please upload an image.", variant: "destructive" });
+                    return;
+                  }
+                  if (file.size > 5 * 1024 * 1024) {
+                    toast({ title: "File too large", description: "Maximum image size is 5MB.", variant: "destructive" });
+                    return;
+                  }
+                  setImageFile(file);
+                  setImagePreview(URL.createObjectURL(file));
+                  setRemoveImage(false);
+                }
+              }}
+            />
           </div>
 
           {/* Permit File */}

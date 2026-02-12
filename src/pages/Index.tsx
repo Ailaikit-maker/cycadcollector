@@ -63,6 +63,7 @@ const Index = () => {
             permitFile: c.permit_file_name && c.permit_file_url
               ? { name: c.permit_file_name, url: c.permit_file_url }
               : undefined,
+            imageUrl: c.image_url ?? undefined,
             dateAdded: c.date_added,
           }))
         );
@@ -90,8 +91,22 @@ const Index = () => {
     setCollector(c);
   };
 
-  const handleAddItem = async (item: CycadItem) => {
+  const handleAddItem = async (item: CycadItem, imageFile?: File) => {
     if (!user) return;
+
+    let imageUrl: string | null = null;
+    if (imageFile) {
+      const ext = imageFile.name.split(".").pop();
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("cycad-images").upload(path, imageFile);
+      if (uploadError) {
+        toast({ title: "Image upload failed", description: uploadError.message, variant: "destructive" });
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("cycad-images").getPublicUrl(path);
+      imageUrl = urlData.publicUrl;
+    }
+
     const { data, error } = await supabase.from("cycad_items").insert({
       user_id: user.id,
       genus: item.genus,
@@ -106,6 +121,7 @@ const Index = () => {
       permit: item.permit,
       permit_file_name: item.permitFile?.name ?? null,
       permit_file_url: item.permitFile?.url ?? null,
+      image_url: imageUrl,
     }).select().single();
     if (error) {
       toast({ title: "Error adding cycad", description: error.message, variant: "destructive" });
@@ -115,6 +131,7 @@ const Index = () => {
       ...item,
       id: data.id,
       dateAdded: data.date_added,
+      imageUrl: imageUrl ?? undefined,
     }, ...prev]);
     setShowAddForm(false);
   };
@@ -128,7 +145,22 @@ const Index = () => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
-  const handleEditItem = async (updated: CycadItem) => {
+  const handleEditItem = async (updated: CycadItem, imageFile?: File) => {
+    if (!user) return;
+
+    let imageUrl = updated.imageUrl ?? null;
+    if (imageFile) {
+      const ext = imageFile.name.split(".").pop();
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("cycad-images").upload(path, imageFile);
+      if (uploadError) {
+        toast({ title: "Image upload failed", description: uploadError.message, variant: "destructive" });
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("cycad-images").getPublicUrl(path);
+      imageUrl = urlData.publicUrl;
+    }
+
     const { error } = await supabase.from("cycad_items").update({
       genus: updated.genus,
       species: updated.species,
@@ -140,12 +172,13 @@ const Index = () => {
       purchase_price: updated.purchasePrice ?? null,
       value: updated.value ?? null,
       permit: updated.permit,
+      image_url: imageUrl,
     }).eq("id", updated.id);
     if (error) {
       toast({ title: "Error updating cycad", description: error.message, variant: "destructive" });
       return;
     }
-    setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+    setItems((prev) => prev.map((i) => (i.id === updated.id ? { ...updated, imageUrl: imageUrl ?? undefined } : i)));
   };
 
   return (
