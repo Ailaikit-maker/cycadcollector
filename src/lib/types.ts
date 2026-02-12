@@ -39,5 +39,6 @@ export interface CycadItem {
   value?: string;
   permit: PermitStatus;
   permitFile?: { name: string; url: string };
+  imageUrl?: string;
   dateAdded: string;
 }

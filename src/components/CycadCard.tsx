@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Leaf, FileText, Pencil, Trash2 } from "lucide-react";
+import { Leaf, FileText, Pencil, Trash2, ImageIcon } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -21,13 +21,21 @@ const CycadCard = ({
 }: {
   item: CycadItem;
   onDelete: (id: string) => void;
-  onEdit: (updated: CycadItem) => void;
+  onEdit: (updated: CycadItem, imageFile?: File) => void;
 }) => {
   const [editOpen, setEditOpen] = useState(false);
 
   return (
     <>
-      <div className="group rounded-xl border bg-card p-5 transition-all hover:shadow-md">
+      <div className="group rounded-xl border bg-card overflow-hidden transition-all hover:shadow-md">
+        {item.imageUrl ? (
+          <img src={item.imageUrl} alt={`${item.genus} ${item.species}`} className="h-40 w-full object-cover" />
+        ) : (
+          <div className="flex h-28 w-full items-center justify-center bg-muted/50">
+            <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
+          </div>
+        )}
+        <div className="p-5">
         <div className="mb-3 flex items-start justify-between">
           <div className="flex items-center gap-2">
             <Leaf className="h-5 w-5 text-primary" />
@@ -96,6 +104,7 @@ const CycadCard = ({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        </div>
         </div>
       </div>
 

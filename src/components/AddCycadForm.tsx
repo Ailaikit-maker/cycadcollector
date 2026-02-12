@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
 import { GENERA, type CycadItem, type Genus, type Sex, type PermitStatus } from "@/lib/types";
 import { format } from "date-fns";
-import { CalendarIcon, FileUp, X } from "lucide-react";
+import { CalendarIcon, FileUp, X, ImagePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -29,7 +29,7 @@ const cycadSchema = z.object({
 
 interface AddCycadFormProps {
   collectorId: string;
-  onAdd: (item: CycadItem) => void;
+  onAdd: (item: CycadItem, imageFile?: File) => void;
 }
 
 const AddCycadForm = ({ collectorId, onAdd }: AddCycadFormProps) => {
@@ -44,7 +44,10 @@ const AddCycadForm = ({ collectorId, onAdd }: AddCycadFormProps) => {
   const [value, setValue] = useState("");
   const [permit, setPermit] = useState<PermitStatus>("Not required");
   const [permitFile, setPermitFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -90,7 +93,7 @@ const AddCycadForm = ({ collectorId, onAdd }: AddCycadFormProps) => {
       dateAdded: new Date().toISOString(),
     };
 
-    onAdd(item);
+    onAdd(item, imageFile || undefined);
     toast({ title: "Cycad added!", description: `${item.genus} ${item.species} has been added to your collection.` });
     setSpecies("");
     setDateObtained(undefined);
@@ -102,7 +105,10 @@ const AddCycadForm = ({ collectorId, onAdd }: AddCycadFormProps) => {
     setValue("");
     setPermit("Not required");
     setPermitFile(null);
+    setImageFile(null);
+    setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
   const formFields = (
@@ -213,6 +219,58 @@ const AddCycadForm = ({ collectorId, onAdd }: AddCycadFormProps) => {
             <SelectItem value="In process">In process</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Cycad Image Upload */}
+      <div className="space-y-2">
+        <Label>Cycad Image</Label>
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            onClick={() => imageInputRef.current?.click()}
+          >
+            <ImagePlus className="h-4 w-4" />
+            {imageFile ? "Change Image" : "Upload Image"}
+          </Button>
+          {imageFile && (
+            <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-1.5 text-sm">
+              <span className="max-w-[200px] truncate">{imageFile.name}</span>
+              <button
+                type="button"
+                onClick={() => { setImageFile(null); setImagePreview(null); if (imageInputRef.current) imageInputRef.current.value = ""; }}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+        {imagePreview && (
+          <img src={imagePreview} alt="Preview" className="mt-2 h-32 w-32 rounded-lg object-cover border" />
+        )}
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              if (!file.type.startsWith("image/")) {
+                toast({ title: "Invalid file", description: "Please upload an image file.", variant: "destructive" });
+                return;
+              }
+              if (file.size > 5 * 1024 * 1024) {
+                toast({ title: "File too large", description: "Maximum image size is 5MB.", variant: "destructive" });
+                return;
+              }
+              setImageFile(file);
+              setImagePreview(URL.createObjectURL(file));
+            }
+          }}
+        />
       </div>
 
       {/* Permit PDF Upload */}
