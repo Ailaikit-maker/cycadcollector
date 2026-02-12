@@ -1,54 +1,71 @@
 
 
-# Add "Request Permit Assistance" Feature
+# Plan: Permit Assistance, Blurred Background, and Green/Orange Theme
 
-## What will happen
-When a user selects "No" for the permit status (either when adding a new cycad or editing an existing one), a "Request Permit Assistance" button will appear. Clicking it sends an email to **permits@investmentgardens.co.za** with the user's name, surname, and email address, along with details about the cycad they need help with.
+## Overview
 
-## How it works
+Three changes are being made:
 
-1. **Backend function** -- A new backend function (`request-permit-assistance`) will be created to send the email using Resend. This keeps the email-sending logic secure and server-side.
+1. **Implement the "Request Permit Assistance" feature** (it was previously planned but never built)
+2. **Add the uploaded cycad image as a blurred background** across the app
+3. **Update the color theme** to a more vibrant green and orange palette
 
-2. **UI changes in three places:**
-   - **AddCycadForm** -- When permit is set to "No", show a "Request Permit Assistance" button below the permit selector.
-   - **EditCycadDialog** -- Same behavior when permit is changed to "No".
-   - **CycadCard** -- Show a small "Request Assistance" link on cards where permit is "No".
+---
 
-3. **Email content** -- The email sent to `permits@investmentgardens.co.za` will include:
-   - User's first name and last name
-   - User's email address
-   - The cycad genus and species they need a permit for
+## 1. Request Permit Assistance
 
-4. **User feedback** -- A success toast will confirm the request was sent, or an error toast if something goes wrong.
+Since no email-sending service is currently configured, the feature will be implemented using a backend function with Resend for email delivery. A Resend API key will be required before this can work.
 
-## Prerequisites
+**What gets built:**
 
-A **Resend API key** is required to send emails. You will need to:
-1. Sign up at [resend.com](https://resend.com) if you don't have an account
-2. Verify your sending domain at [resend.com/domains](https://resend.com/domains) (so emails come from your domain, not a generic one)
-3. Create an API key at [resend.com/api-keys](https://resend.com/api-keys)
-4. Provide the API key when prompted so it can be securely stored
+- **Backend function** (`request-permit-assistance`) that sends an email to `permits@investmentgardens.co.za` containing the user's name, email, and the cycad's genus/species
+- **"Request Assistance" button** appears in three places:
+  - In the **Add Cycad form** when permit is set to "No"
+  - In the **Edit Cycad dialog** when permit is set to "No"
+  - In the **Collection Summary table** next to each row where permit is "No"
+- **User feedback**: A success/error toast is shown after the request
+
+**Prerequisite:** You will be prompted to enter a Resend API key so emails can be sent.
+
+---
+
+## 2. Blurred Background Image
+
+The uploaded cycad photo will be saved as a project asset and used as a fixed, blurred background behind the entire app. The content will remain readable with a semi-transparent overlay.
+
+- Save the uploaded image to `src/assets/bg-cycad.jpeg`
+- Add a fixed full-screen background element in `Index.tsx` (and optionally `Auth.tsx`) with CSS blur and a color overlay
+- Content sits on top and remains fully readable
+
+---
+
+## 3. Green and Orange Theme
+
+Update the CSS custom properties in `src/index.css` to use a more vibrant green and orange palette:
+
+- **Primary color**: Richer, deeper green (forest green tones)
+- **Accent color**: Warm orange (amber/burnt orange tones)
+- **Buttons, links, badges**: Will automatically pick up the new colors
+- **Cards and backgrounds**: Slightly adjusted to complement the new palette
+- Dark mode variables will also be updated accordingly
 
 ---
 
 ## Technical Details
 
-### 1. Edge Function: `supabase/functions/request-permit-assistance/index.ts`
-- Accepts POST with JSON body: `{ firstName, lastName, email, genus, species }`
-- Uses Resend SDK to send an email to `permits@investmentgardens.co.za`
-- Includes CORS headers for browser access
-- Validates required fields before sending
+### New Files
+- `supabase/functions/request-permit-assistance/index.ts` -- Edge function using Resend SDK to send emails
+- `src/assets/bg-cycad.jpeg` -- Uploaded background image
 
-### 2. UI Components Modified
-- **`src/components/AddCycadForm.tsx`** -- Add a conditional "Request Permit Assistance" button that appears when `permit === "No"`. On click, it calls the edge function with the collector's details and the current genus/species.
-- **`src/components/EditCycadDialog.tsx`** -- Same conditional button in the edit dialog.
-- **`src/components/CycadCard.tsx`** -- Add a small "Request Assistance" button on cards where `item.permit === "No"`.
+### Modified Files
+- `src/index.css` -- Updated CSS custom properties for green/orange theme
+- `src/pages/Index.tsx` -- Add blurred background element; pass `collector` prop to `AddCycadForm` and `CycadCard`
+- `src/pages/Auth.tsx` -- Add blurred background element
+- `src/components/AddCycadForm.tsx` -- Accept `collector` prop; show "Request Permit Assistance" button when permit is "No"
+- `src/components/EditCycadDialog.tsx` -- Show "Request Permit Assistance" button when permit is "No"; accept collector info
+- `src/components/CycadCard.tsx` -- Accept `collector` prop; show "Request Assistance" button when permit is "No"
+- `src/components/CollectionSummary.tsx` -- Add "Request Assistance" button/link in each table row where permit is "No"; accept `collector` prop
 
-### 3. Data Flow
-- The collector's name and email are passed from `Index.tsx` down to `AddCycadForm` and `CycadCard` (they already have access to genus/species).
-- The edge function composes and sends the email, then returns success/failure.
-
-### 4. Props Changes
-- `AddCycadForm` will receive an additional `collector` prop to access the user's name and email.
-- `CycadCard` will receive an additional `collector` prop for the same reason.
+### Secret Required
+- `RESEND_API_KEY` -- Needed by the backend function to send emails via Resend
 
